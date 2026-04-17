@@ -1,21 +1,11 @@
 use std::io;
-#[path = "bin/counter.rs"]
-mod counter;
 
-
- 
-
-fn main(){
-
-    counter::main();
+fn main() {
     let mut tasks: Vec<String> = Vec::new();
 
+    println!("Welcome To RUST SMART CLI PROJECT");
 
-  
-
-    println!("Welcome To RUST SMART CLI PROJECT ");
-
-    loop{ 
+    loop {
         println!("Please Enter add/list/exit");
 
         let mut input = String::new();
@@ -26,7 +16,7 @@ fn main(){
 
         let input = input.trim();
 
-        if input == "exit" {
+        if input == "exit" {git 
             println!("GoodBye");
             break;
         }
@@ -35,12 +25,12 @@ fn main(){
             let task = input[4..].to_string();
             tasks.push(task);
             println!("Task Added Successfully");
-        }else if  input.starts_with("list "){
+        } else if input == "list" {
             println!("Your Tasks");
-            for (i, task) in tasks.iter().enumerate(){
-                println!("{}: {}", i+1, task);
+            for (i, task) in tasks.iter().enumerate() {
+                println!("{}: {}", i + 1, task);
             }
-        }else {
+        } else {
             println!("Unknown Command");
         }
     }
