@@ -1,8 +1,13 @@
 use std::io;
+#[path = "bin/counter.rs"]
+mod counter;
+
+
+ 
 
 fn main(){
 
-
+    counter::main();
     let mut tasks: Vec<String> = Vec::new();
 
 
