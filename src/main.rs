@@ -25,7 +25,7 @@ fn load_tasks() -> Vec<Task> {
 fn main() {
     let mut tasks = load_tasks();
 
-    println!("Welcome To RUST SMART CLI PROJECT 🚀");
+    println!("Welcome To RUST SMART CLI PROJECT ");
    //The Loop Starts here
     loop {
         println!("\nCommands: add <task> | list | delete <id> | done <id> | exit");
