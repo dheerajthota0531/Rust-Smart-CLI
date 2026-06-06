@@ -1,18 +1,26 @@
-use std::io;
 use std::fs;
+use std::io;
 
-use serde::{Serialize, Deserialize};
+use std::sync::mpsc::{self, Sender};
+use std::thread;
 
-#[derive(Serialize, Deserialize, Debug)]
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Task {
     id: u32,
     title: String,
     completed: bool,
 }
+#[derive(Serialize, Deserialize, Debug)]
+enum WriteCommand {
+    Save(Vec<Task>),
+    Quit,
+}
 
-fn save_tasks(tasks: &[Task]) {
-    let data = serde_json::to_string_pretty(tasks).unwrap();
-    fs::write("tasks.json", data).unwrap();
+fn save_tasks(tx: &Sender<WriteCommand>, tasks: &[Task]) {
+    tx.send(WriteCommand::Save(tasks.to_vec())).unwrap();
 }
 
 fn load_tasks() -> Vec<Task> {
@@ -23,28 +31,38 @@ fn load_tasks() -> Vec<Task> {
 }
 
 fn main() {
+    let (tx, rx) = mpsc::channel::<WriteCommand>();
+    let writer_handle = thread::spawn(move || {
+        for cmd in rx {
+            match cmd {
+                WriteCommand::Save(tasks) => {
+                    let data = serde_json::to_string_pretty(&tasks).unwrap();
+                    fs::write("tasks.json", data).unwrap();
+                }
+                WriteCommand::Quit => break,
+            }
+        }
+    });
+
     let mut tasks = load_tasks();
 
     println!("Welcome To RUST SMART CLI PROJECT ");
-   //The Loop Starts here
     loop {
         println!("\nCommands: add <task> | list | delete <id> | done <id> | exit");
 
         let mut input = String::new();
 
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read");
+        io::stdin().read_line(&mut input).expect("Failed to read");
 
         let input = input.trim();
 
         if input == "exit" {
+            save_tasks(&tx, &tasks);
+            tx.send(WriteCommand::Quit).unwrap();
+            writer_handle.join().unwrap();
             println!("Goodbye 👋");
             break;
-        }
-
-   
-        else if input.starts_with("add ") {
+        } else if input.starts_with("add ") {
             let title = input[4..].to_string();
 
             let new_task = Task {
@@ -54,13 +72,10 @@ fn main() {
             };
 
             tasks.push(new_task);
-            save_tasks(&tasks);
+            save_tasks(&tx, &tasks);
 
             println!("Task added ");
-        }
-
-       
-        else if input == "list" {
+        } else if input == "list" {
             if tasks.is_empty() {
                 println!("No tasks found");
                 continue;
@@ -75,10 +90,7 @@ fn main() {
                     task.title
                 );
             }
-        }
-
-        
-        else if input.starts_with("delete ") {
+        } else if input.starts_with("delete ") {
             let parts: Vec<&str> = input.split_whitespace().collect();
 
             if parts.len() != 2 {
@@ -93,21 +105,17 @@ fn main() {
                     } else {
                         tasks.remove(num - 1);
 
-                        // reassign IDs
                         for (i, task) in tasks.iter_mut().enumerate() {
                             task.id = i as u32 + 1;
                         }
 
-                        save_tasks(&tasks);
+                        save_tasks(&tx, &tasks);
                         println!("Task deleted ");
                     }
                 }
                 Err(_) => println!("Invalid number"),
             }
-        }
-
-        
-        else if input.starts_with("done ") {
+        } else if input.starts_with("done ") {
             let parts: Vec<&str> = input.split_whitespace().collect();
 
             if parts.len() != 2 {
@@ -121,16 +129,13 @@ fn main() {
                         println!("Invalid id");
                     } else {
                         tasks[num - 1].completed = true;
-                        save_tasks(&tasks);
+                        save_tasks(&tx, &tasks);
                         println!("Task marked as completed ");
                     }
                 }
                 Err(_) => println!("Invalid number"),
             }
-        }
-
-        
-        else {
+        } else {
             println!("Unknown command ");
         }
     }

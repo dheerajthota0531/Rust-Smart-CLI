@@ -3,5 +3,15 @@
     "id": 1,
     "title": "complete solana course",
     "completed": false
+  },
+  {
+    "id": 2,
+    "title": "make bed",
+    "completed": false
+  },
+  {
+    "id": 3,
+    "title": "make tea",
+    "completed": true
   }
 ]
